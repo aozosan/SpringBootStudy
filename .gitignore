@@ -32,3 +32,4 @@ build/
 .classpath
 .project
 HELP.md
+/.metadata/
