@@ -2,25 +2,40 @@ $(function() {
 	var stompClient = null;
 
 	function connect() {
-		var socket = new WebSocket('ws://' + location.host + '/endpoint');
-		stompClient = Stomp.over(socket);
-		stompClient.connect({}, function(frame) {
+		stompClient = new StompJs.Client({
+			brokerURL : 'ws://' + location.host + '/endpoint',
+			debug : function(str) {
+				console.log(str);
+			},
+			reconnectDelay : 5000,
+			heartbeatIncoming : 4000,
+			heartbeatOutgoing : 4000
+		});
+
+		stompClient.onConnect = function(frame) {
 			setConnected(true);
 			console.log('Connected: ' + frame);
-			stompClient.subscribe('/topic/greetings', recieveMessage);
-		});
+			stompClient.subscribe("/topic/greetings", recieveMessage);
+		};
+
+		stompClient.onStompError = function(frame) {
+			console.log('Broker reported error: ' + frame.headers['message']);
+			console.log('Additional details: ' + frame.body);
+		};
+
+		stompClient.activate();
 	}
-	
+
 	function disconnect() {
 		if (stompClient !== null) {
-			stompClient.disconnect();
+			stompClient.deactivate();
 			stompClient = null;
 		}
 
 		setConnected(false);
 		console.log("Disconnected");
 	}
-	
+
 	function setConnected(connected) {
 		$("#connect").prop("disabled", connected);
 		$("#disconnect").prop("disabled", !connected);
@@ -29,7 +44,7 @@ $(function() {
 
 	function sendMessage() {
 		var name = $('#name').val();
-		stompClient.send('/app/greet', {}, name);
+		stompClient.publish({destination: '/app/greet', body: name});
 	}
 
 	function recieveMessage(message) {
@@ -40,11 +55,11 @@ $(function() {
 	$("#connect").click(function() {
 		connect();
 	});
-	
+
 	$("#disconnect").click(function() {
 		disconnect();
 	});
-	
+
 	$("#send").click(function() {
 		sendMessage();
 	});
