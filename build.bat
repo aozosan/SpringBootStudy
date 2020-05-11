@@ -1,5 +1,6 @@
 @echo off
 call :run mysocket
+call :run myclient
 pause
 exit /b
 
